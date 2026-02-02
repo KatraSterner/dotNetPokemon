@@ -1,5 +1,8 @@
 ﻿using System.Net.Http.Json;
 
+using Pokemon.Domain.Interfaces;
+using Pokemon.Domain.Models;
+
 namespace Pokemon.Application.Services;
 
 // TODO: import models and other files..................................................................................
@@ -9,12 +12,12 @@ namespace Pokemon.Application.Services;
 
 // assuming:
 /*
-    public class Pokemon
+    public class Pokémon
     {
         public string Id { get; set; }
         public string Name { get; set; }
         public string Type { get; set; }
-        public string SpriteUrl { get; set; }
+        public string Sprite { get; set; }
         public string UserId { get; set; }
     }
 
@@ -29,15 +32,15 @@ namespace Pokemon.Application.Services;
 */
 
 // TODO: 
-//      - add DTOs for parsing JSON from the API
+//      - check battle logic using DTOs
+//      - check other errors
 
 public class PokemonService
 {
-    
-    private readonly IRepository<Pokemon> _pokemonRepo;
+    private readonly IRepository<Domain.Models.Pokemon> _pokemonRepo;
     private readonly HttpClient _http;
     
-    public PokemonService(IRepository<Pokemon> pokemonRepo, HttpClient http)
+    public PokemonService(IRepository<Domain.Models.Pokemon> pokemonRepo, HttpClient http)
     {
         _pokemonRepo = pokemonRepo;
         _http = http;
@@ -47,39 +50,38 @@ public class PokemonService
     private string ApiUrl = "https://pokeapi.co/api/v2/";
 
 // __________________________________________DATABASE OPERATIONS________________________________________________________
-    public async Task<List<Pokemon>> GetUserTeamAsync(string userId) // ------------------------------------------------
+    public async Task<List<Domain.Models.Pokemon>> GetUserTeamAsync(int userId) // ------------------------------------------------
     {
-        // get all pokemon in database with this userID
-        return await _pokemonRepo.GetWhereAsync(p => p.UserId == userId);
+        // get all Pokémon in database with this userID
+        return await _pokemonRepo.GetByUserIdAsync(userId);
     }
 
-    public async Task AddPokemonToTeamAsync(string name, string type, string spriteURL, string userId) // --------------
+    public async Task AddPokemonToTeamAsync(string name, string type, string sprite, int userId) // --------------
     {
-        // check that team is not full
+        // check that team is not full (max of 3)
         var userTeam = await GetUserTeamAsync(userId);
         if (userTeam.Count >= 3)
         {
             throw new Exception($"Your team is full. You cannot have more than 3 pokemon at a time. ");
         }
         
-        // create a pokemon object using data from API item selected
-        var pokemon = new Pokemon
+        // create a Pokémon object using data from API item selected
+        var pokemon = new Domain.Models.Pokemon
         {
-            Id = Guid.NewGuid().ToString(),
             Name = name,
             Type = type,
-            SpriteURL = spriteURL,
+            Sprite = sprite,
             UserId = userId
         };
         
-        // add pokemon under this user to the database
+        // add Pokémon under this user to the database
         await _pokemonRepo.AddAsync(pokemon);
         await _pokemonRepo.SaveChangesAsync();
     }
 
-    public async Task RemovePokemonFromTeamAsync(string pokemonId, string userId) // -----------------------------------
+    public async Task RemovePokemonFromTeamAsync(int pokemonId, int userId) // -----------------------------------
     {
-        // find the given pokemon for this user and delete it from the database
+        // find the given Pokémon for this user and delete it from the database
         var team = await GetUserTeamAsync(userId);
         var pokemon = team.FirstOrDefault(p => p.Id == pokemonId);
         
@@ -94,9 +96,37 @@ public class PokemonService
 // ________________________________________API OPERATIONS_______________________________________________________________
     public async Task<List<ApiPokemonResult>> GetPokemonFromApiAsync(int limit = 50) // --------------------------------
     {
-        // get "all" pokemon (top 50 by default) from API
-        var response = await _http.GetFromJsonAsync<ApiPokemonResult>($"{ApiUrl}pokemon?limit={limit}");
-        /* returns \/ \/ \/ \/ \/ \/ \/ 
+        // get "all" Pokémon (top 50 by default) from API
+        var response = await _http.GetFromJsonAsync<ApiPokemonResponse>($"{ApiUrl}pokemon?limit={limit}");
+         
+        return response.Results;
+    }
+    
+    public async Task<ApiPokemonDetails> GetPokemonDetailsAsync(string url) // -----------------------------------------
+    {
+        // use the url from each ApiPokemonResult ^ to get more information about the Pokémon
+        // "url": "https://pokeapi.co/api/v2/pokemon/1/" where the final number is the Pokémon ID
+        return await _http.GetFromJsonAsync<ApiPokemonDetails>(url);
+    }
+    
+    public async Task<ApiPokemonDetails> SearchPokemonAsync(string queryName)
+    {
+        // search the api for a specific Pokémon
+        try
+        {
+            return await _http.GetFromJsonAsync<ApiPokemonDetails>($"{ApiUrl}pokemon/{queryName}");
+        }
+        catch
+        {
+            return null;
+        }
+    }
+    
+// -----DTOs------------------------------------------------------------------------------------------------------------
+    public class ApiPokemonResponse
+    {
+        public List<ApiPokemonResult> Results { get; set; }
+        /*  define the "results" section
         {
           "count": 1350,
           "next": "https://pokeapi.co/api/v2/pokemon?offset=50&limit=50",
@@ -108,41 +138,92 @@ public class PokemonService
                 }, ...
             ]
         } 
-        /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ */
-         
-        return response.Results;
+        */
     }
-
-    public async Task<ApiPokemonDetails> GetPokemonDetailsAsync(string url) // -----------------------------------------
+    public class ApiPokemonResult
     {
-        // use the url from each ApiPokemonResult ^ to get more information about the pokemon
-        // "url": "https://pokeapi.co/api/v2/pokemon/1/" where the final number is the pokemon ID
-        return await _http.GetFromJsonAsync<ApiPokemonDetails>(url);
-        
+        public string Name { get; set; }
+        public string Url { get; set; }
+        /* define each item in the "results" section"
+        {
+            "name": "bulbasaur",
+            "url": "https://pokeapi.co/api/v2/pokemon/1/"
+        }, ...
+        */
     }
-
-    public async Task<ApiPokemonDetails> SearchPokemonAsync(string queryName)
+    public class ApiPokemonDetails
     {
-        // search the api for a specific pokemon
-        try
+        public string Name { get; set; }
+        public List<ApiTypeSlot> Types { get; set; }
+        public ApiSprites Sprites { get; set; }
+        /*
         {
-            // TODO: change to use private url to act like API key since there isn't one???????????????????????????????????????
-            return await _http.GetFromJsonAsync<ApiPokemonDetails>($"{ApiUrl}pokemon/{queryName}");
+            "abilities": [...],
+            "cries": {...another url...},
+            "forms": [...],
+            "game_indices": [...],
+            "height": 7,
+            "held_items": [],
+            "id": 1,
+            "is_default": true,
+            "location_area_encounters": "https://pokeapi.co/api/v2/pokemon/1/encounters",
+            "moves": [...],
+            "name": "bulbasaur",
+            "order": 1,
+            "past_abilities": [...],
+            "past_stats": [...],
+            "past_types": [],
+            "species": {
+                "name": "bulbasaur",
+                "url": "https://pokeapi.co/api/v2/pokemon-species/1/"
+            },
+            "sprites": {...},
+            "stats": [...],
+            types": [...],
+            "weight": 69
         }
-        catch
+        */
+    }
+    public class ApiTypeSlot
+    {
+        public ApiType Type { get; set; }
+        /*
         {
-            return null;
+            "slot": 1,
+            "type": {...}
         }
+        */
+    }
+    public class ApiType
+    {
+        public string Name { get; set; }
+        /*
+        {
+            "name": "grass",
+            "url": "https://pokeapi.co/api/v2/type/12/"
+        }
+        */
+    }
+    public class ApiSprites
+    {
+        public string Front_Default { get; set; }
+        /*
+        "sprites": {
+            ...,
+            "front_default": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/1.png",
+            "front_female": null,
+            ...
+        }
+        */
     }
     
 // _____________________________________CUSTOM FUNCTIONS________________________________________________________________
-    public async Task<string> GymBattleAsync(string userId) // ---------------------------------------------------------
+    public async Task<string> GymBattleAsync(int userId) // ---------------------------------------------------------
     {
-        // Get all pokemon on the user's team and battle them against a gym
+        // Get all Pokémon on the user's team and battle them against a gym
         var userTeam = await GetUserTeamAsync(userId);
 
-        // TODO: check if user has 3 pokemon? (require them to have exactly 3?)????????????????????????????????????????????
-        // check that the user has ANY pokemon to start with
+        // check that the user has ANY Pokémon to start with
         if (!userTeam.Any())
             return "You don't have any pokemon in your team to battle with!";
         
@@ -159,7 +240,7 @@ public class PokemonService
         string[] outcomes = { "", "", "" };
         // score to determine final winner
         var score = 0;
-        // loop through each pokemon on the team (3) and battle them in order against the gym team
+        // loop through each Pokémon on the team (3) and battle them in order against the gym team
         for (int i = 0; i < gymTeam.Count; i++)
         {
             if (IsTypeStrongAgainst(userTeam[i].Type, gymTeam[i].Type))
