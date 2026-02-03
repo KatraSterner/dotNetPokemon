@@ -1,0 +1,15 @@
+﻿@page "/team"
+
+<h1>Your Team</h1>
+<p>Your captured Pokémon will appear here.</p>
+
+<div class="team-grid">
+    @for (int i = 0; i < 6; i++)
+    {
+        <div class="pokemon-slot">
+            <div class="sprite-box">[Sprite]</div>
+            <p><strong>Name:</strong> Empty</p>
+            <p><strong>Type:</strong> —</p>
+        </div>
+    }
+</div>

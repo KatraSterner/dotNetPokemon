@@ -1,0 +1,49 @@
+.pokemon-card, .pokemon-slot, .battle-container, .login-box {
+    border: 1px solid #ccc;
+    padding: 1rem;
+    margin-top: 1rem;
+    border-radius: 8px;
+}
+
+.sprite-box {
+    width: 96px;
+    height: 96px;
+    background: #eee;
+    border: 1px dashed #aaa;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: .5rem;
+}
+
+.team-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+}
+
+.battle-container {
+    display: flex;
+    justify-content: space-between;
+}
+
+.nav-menu {
+    display: flex;
+    flex-direction: column;
+    gap: .5rem;
+}
+
+.main-layout {
+    display: flex;
+}
+
+.sidebar {
+    width: 200px;
+    padding: 1rem;
+    border-right: 1px solid #ccc;
+}
+
+main {
+    padding: 1rem;
+    flex-grow: 1;
+}
