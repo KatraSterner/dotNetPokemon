@@ -1,39 +1,8 @@
 ﻿using System.Net.Http.Json;
 
 using Pokemon.Domain.Interfaces;
-using Pokemon.Domain.Models;
 
 namespace Pokemon.Application.Services;
-
-// TODO: import models and other files..................................................................................
-//      IRepository
-//      Pokemon
-//      ApiPokemonResult
-
-// assuming:
-/*
-    public class Pokémon
-    {
-        public string Id { get; set; }
-        public string Name { get; set; }
-        public string Type { get; set; }
-        public string Sprite { get; set; }
-        public string UserId { get; set; }
-    }
-
-    public interface IRepository<T>
-    {
-        Task<List<T>> GetAllAsync();
-        Task<List<T>> GetWhereAsync(Expression<Func<T, bool>> predicate);
-        Task AddAsync(T entity);
-        Task RemoveAsync(T entity);
-        Task SaveChangesAsync();
-    }
-*/
-
-// TODO: 
-//      - check battle logic using DTOs
-//      - check other errors
 
 public class PokemonService
 {
@@ -223,17 +192,17 @@ public class PokemonService
         // Get all Pokémon on the user's team and battle them against a gym
         var userTeam = await GetUserTeamAsync(userId);
 
-        // check that the user has ANY Pokémon to start with
-        if (!userTeam.Any())
-            return "You don't have any pokemon in your team to battle with!";
+        // check that the user has a team of exactly 3
+        if (userTeam.Count != 3)
+            return "Your team must include exactly 3 Pokémon.";
         
-        // TODO: convert to preset gyms in database instead of hardcoding it here??????????????????????????????????????????
+        // TODO: convert to preset gyms in database instead of hardcoding it here?
         // build gym team with rock pokemon types
-        var gymTeam = List<>
+        var gymTeam = new List<Domain.Models.Pokemon>
         {
-            { Name = "Onix", Type = "rock" },
-            { Name = "Geodude", Type = "rock" },
-            { Name = "SudoWoodo", Type = "rock"}
+            new Domain.Models.Pokemon { Name = "Onix", Type = "rock" },
+            new Domain.Models.Pokemon { Name = "Geodude", Type = "rock" },
+            new Domain.Models.Pokemon { Name = "Sudowoodo", Type = "rock" }
         };
         
         // string to store outcome results
@@ -254,27 +223,17 @@ public class PokemonService
             }
             else
             {
-                // TODO: replace with random winner????????????????????????????????????????????????????????????????????????
                 outcomes[i] = "It's a tie...";
             }
         }
-
-        if (score >= 2)
-        {
-            return $"You Win! " +
-                   $"\nResults: " +
-                   $"\n\t{outcomes[0]}" +
-                   $"\n\t{outcomes[1]} " +
-                   $"\n\t{outcomes[2]}";
-        }
-        else
-        {
-            return $"You Lose... " +
-                   $"\nResults: " +
-                   $"\n\t{outcomes[0]}" +
-                   $"\n\t{outcomes[1]} " +
-                   $"\n\t{outcomes[2]}";
-        }
+        
+        var result = score >= 2 ? "You Win!" : "You Lose!";
+        return result +
+               $"\nResults: " +
+               $"\n\t{outcomes[0]}" +
+               $"\n\t{outcomes[1]} " +
+               $"\n\t{outcomes[2]}";
+        
     }
 
     private bool IsTypeStrongAgainst(string type1, string type2) // - - - - - - - - - - - - - - - - - - - - - - - - - - 
