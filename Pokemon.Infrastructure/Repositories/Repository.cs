@@ -1,25 +1,18 @@
-using Pokemon.Domain;
-
-namespace Pokemon.Infrastructure;
 using Microsoft.EntityFrameworkCore;
+using Pokemon.Domain;
+using Pokemon.Infrastructure.Data;
 
+namespace Pokemon.Infrastructure.Repositories;
 
 public class Repository<T> : IRepository<T> where T : class
 {
-    private readonly ChoreDbContext _context;
+    protected readonly PokemonDbContext _context;
+    protected readonly DbSet<T> _dbSet;
 
-    private readonly DbSet<T> _dbSet;
-
-    public Repository(ChoreDbContext context)
+    public Repository(PokemonDbContext context)
     {
         _context = context;
-
         _dbSet = _context.Set<T>();
-    }
-
-    public async Task AddAsync(T entity)
-    {
-        await _dbSet.AddAsync(entity);
     }
 
     public async Task<List<T>> GetAllAsync()
@@ -32,9 +25,19 @@ public class Repository<T> : IRepository<T> where T : class
         return await _dbSet.FindAsync(id);
     }
 
+    public async Task AddAsync(T entity)
+    {
+        await _dbSet.AddAsync(entity);
+    }
+
+    public Task DeleteAsync(T entity)
+    {
+        _dbSet.Remove(entity);
+        return Task.CompletedTask;
+    }
+
     public async Task SaveChangesAsync()
     {
         await _context.SaveChangesAsync();
     }
-
 }
