@@ -2,33 +2,72 @@
 @rendermode InteractiveServer
 @using Pokemon.Application.Services
 @inject PokemonService PokemonService
+@layout MainLayout
 
-<h1>Pokémon Client</h1>
-<p>Welcome to your future Pokédex and battle hub.</p>
+<h1 class="text-center mb-4 fw-bold text-danger">
+    Pokédex Client
+</h1>
 
-<section>
-    <input @bind="searchQuery" placeholder="Search Pokémon..."/>
-    <button>Search</button>
+<p class="text-center text-muted mb-5">
+    Welcome to your future Pokédex and battle hub.
+</p>
+
+<!-- Search Section -->
+<section class="container mb-4">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="input-group shadow-sm">
+                <input class="form-control"
+                       @bind="searchQuery"
+                       placeholder="Search Pokémon by name or number..." />
+
+                <button class="btn btn-danger" @onclick="SearchPokemon">
+                    🔍 Search
+                </button>
+            </div>
+        </div>
+    </div>
 </section>
 
-<section>
-    <h3>Pokémon</h3>
+<section class="container">
+    <h3 class="text-center mb-4 fw-semibold">Pokémon</h3>
     @if (isLoading)
     {
-        <p>Finding Pokemon...</p>
+        <div class="text-center">
+            <div class="spinner-border text-danger" role="status"></div>
+            <p class="mt-2">Finding Pokémon...</p>
+        </div>
     }
-    else if (!pokemonList.Any())
+    else if (!pokemonDetailsList.Any())
     {
-        <p>No Pokemon Found.</p>
+        <p class="text-center text-muted">
+            No Pokémon Found.
+        </p>
     }
     else
     {
-        <div>
+        <div class="row g-4">
             @foreach (var pokemon in pokemonDetailsList)
             {
-                <div>
-                    <p>@pokemon.Name</p>
-                    <img src="@pokemon.Sprites.Front_Default"/>
+                <div class="col-6 col-sm-4 col-md-3 col-lg-2">
+                    <div class="card text-center shadow-sm pokemon-card h-100">
+                        <img src="@pokemon.Sprites.Front_Default"
+                             class="card-img-top bg-light"
+                             alt="@pokemon.Name" />
+
+                        
+                        <div class="card-body p-2">
+                            <h6 class="card-title text-capitalize mb-0">
+                                @pokemon.Name
+                            </h6>
+                            <p class="mb-1">
+                                @pokemon.Types?.FirstOrDefault().Type.Name
+                            </p>
+                            <button class="btn btn-danger btn-sm" @onclick="() => AddToTeam(pokemon)">
+                                + Add to Team
+                            </button>
+                        </div>
+                    </div>
                 </div>
             }
         </div>
@@ -45,7 +84,7 @@
     protected override async Task OnInitializedAsync()
     {
         // ApiPokemonResult gets Name and a URL to more info
-        pokemonList = await PokemonService.GetPokemonFromApiAsync(20);
+        pokemonList = await PokemonService.GetPokemonFromApiAsync(50);
         foreach (var pokemon in pokemonList)
         {
             pokemonDetailsList.Add(
@@ -55,4 +94,30 @@
         isLoading = false;
     }
 
+    private async Task SearchPokemon()
+    {
+        if (string.IsNullOrEmpty(searchQuery))
+        {
+            pokemonDetailsList.Clear();
+            // if user searches on an empty field display the OG 20 Pokémon
+            pokemonList = await PokemonService.GetPokemonFromApiAsync(50);
+            foreach (var pokemon in pokemonList)
+            {
+                pokemonDetailsList.Add(
+                    await PokemonService.GetPokemonDetailsAsync(pokemon.Url)
+                );
+            }
+            return;
+        }
+        
+        pokemonDetailsList.Clear();
+        pokemonDetailsList.Add(
+            await PokemonService.SearchPokemonAsync(searchQuery)
+        );
+    }
+
+    private void AddToTeam(PokemonService.ApiPokemonDetails pokemon)
+    {
+        
+    }
 }
