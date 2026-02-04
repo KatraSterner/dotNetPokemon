@@ -1,13 +1,58 @@
 ﻿@page "/"
+@rendermode InteractiveServer
+@using Pokemon.Application.Services
+@inject PokemonService PokemonService
 
 <h1>Pokémon Client</h1>
 <p>Welcome to your future Pokédex and battle hub.</p>
 
 <section>
-    <h3>Featured Pokémon (placeholder)</h3>
-    <div class="pokemon-card">
-        <div class="sprite-box">[Sprite Placeholder]</div>
-        <p><strong>Name:</strong> Placeholdermon</p>
-        <p><strong>Type:</strong> Normal</p>
-    </div>
+    <input @bind="searchQuery" placeholder="Search Pokémon..."/>
+    <button>Search</button>
 </section>
+
+<section>
+    <h3>Pokémon</h3>
+    @if (isLoading)
+    {
+        <p>Finding Pokemon...</p>
+    }
+    else if (!pokemonList.Any())
+    {
+        <p>No Pokemon Found.</p>
+    }
+    else
+    {
+        <div>
+            @foreach (var pokemon in pokemonDetailsList)
+            {
+                <div>
+                    <p>@pokemon.Name</p>
+                    <img src="@pokemon.Sprites.Front_Default"/>
+                </div>
+            }
+        </div>
+    }
+</section>
+
+@code {
+
+    private List<PokemonService.ApiPokemonResult> pokemonList = new();
+    private List<PokemonService.ApiPokemonDetails> pokemonDetailsList = new();
+    private string searchQuery = "";
+    private bool isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // ApiPokemonResult gets Name and a URL to more info
+        pokemonList = await PokemonService.GetPokemonFromApiAsync(20);
+        foreach (var pokemon in pokemonList)
+        {
+            pokemonDetailsList.Add(
+                await PokemonService.GetPokemonDetailsAsync(pokemon.Url)
+            );
+        }
+        isLoading = false;
+    }
+
+}
