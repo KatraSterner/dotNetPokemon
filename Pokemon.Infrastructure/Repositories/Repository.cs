@@ -1,5 +1,5 @@
 using Microsoft.EntityFrameworkCore;
-using Pokemon.Domain;
+using Pokemon.Domain.Interfaces;
 using Pokemon.Infrastructure.Data;
 
 namespace Pokemon.Infrastructure.Repositories;
@@ -30,10 +30,24 @@ public class Repository<T> : IRepository<T> where T : class
         await _dbSet.AddAsync(entity);
     }
 
-    public Task DeleteAsync(T entity)
+    public async Task RemoveAsync(T entity)
     {
         _dbSet.Remove(entity);
-        return Task.CompletedTask;
+        await Task.CompletedTask;
+    }
+
+    public async Task<List<T?>> GetByUserIdAsync(int? userId)
+    {
+        if (userId == null)
+            return new List<T?>();
+
+        var property = typeof(T).GetProperty("UserId");
+        if (property == null)
+            throw new InvalidOperationException($"Type {typeof(T).Name} does not have a UserId property.");
+
+        return await _dbSet
+            .Where(e => (int?)property.GetValue(e) == userId)
+            .ToListAsync();
     }
 
     public async Task SaveChangesAsync()

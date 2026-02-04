@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Pokemon.Domain.Interfaces;
 using Pokemon.Infrastructure.Data;
 using Pokemon.Infrastructure.Repositories;
 
