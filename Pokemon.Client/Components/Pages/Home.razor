@@ -4,12 +4,9 @@
 @inject PokemonService PokemonService
 @layout MainLayout
 
-<h1 class="text-center mb-4 fw-bold text-danger">
-    Pokédex Client
-</h1>
 
-<p class="text-center text-muted mb-5">
-    Welcome to your future Pokédex and battle hub.
+<p class="text-center text-muted my-3">
+    Find Pokémon to build your team!
 </p>
 
 <!-- Search Section -->
@@ -80,17 +77,21 @@
     private List<PokemonService.ApiPokemonDetails> pokemonDetailsList = new();
     private string searchQuery = "";
     private bool isLoading = true;
+    private int currentUserId = 1; // TODO: get from login page/db? how to store???????????
 
     protected override async Task OnInitializedAsync()
     {
         // ApiPokemonResult gets Name and a URL to more info
         pokemonList = await PokemonService.GetPokemonFromApiAsync(50);
-        foreach (var pokemon in pokemonList)
-        {
-            pokemonDetailsList.Add(
-                await PokemonService.GetPokemonDetailsAsync(pokemon.Url)
-            );
-        }
+
+        // get information about the Pokemon
+        var detailTasks = pokemonList
+            .Select(p => PokemonService.GetPokemonDetailsAsync(p.Url))
+            .ToList();
+        pokemonDetailsList = (await Task.WhenAll(detailTasks))
+            .Where(p => p != null)
+            .ToList();
+        
         isLoading = false;
     }
 
@@ -116,8 +117,8 @@
         );
     }
 
-    private void AddToTeam(PokemonService.ApiPokemonDetails pokemon)
+    private async Task AddToTeam(PokemonService.ApiPokemonDetails pokemon)
     {
-        
+        await PokemonService.AddPokemonToTeamAsync(pokemon, currentUserId);
     }
 }

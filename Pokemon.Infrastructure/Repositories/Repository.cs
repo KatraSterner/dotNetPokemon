@@ -36,7 +36,8 @@ public class Repository<T> : IRepository<T> where T : class
         await Task.CompletedTask;
     }
 
-    public async Task<List<T?>> GetByUserIdAsync(int? userId)
+    /*
+    public async Task<List<T?>> GetByUserIdAsync(int? userId) 
     {
         if (userId == null)
             return new List<T?>();
@@ -45,10 +46,12 @@ public class Repository<T> : IRepository<T> where T : class
         if (property == null)
             throw new InvalidOperationException($"Type {typeof(T).Name} does not have a UserId property.");
 
-        return await _dbSet
-            .Where(e => (int?)property.GetValue(e) == userId)
+        return await _dbSet 
+            .Where(e => e.UserId == userId)
+            //.Where(e => (int?)property.GetValue(e) == userId)
             .ToListAsync();
     }
+    */
 
     public async Task SaveChangesAsync()
     {

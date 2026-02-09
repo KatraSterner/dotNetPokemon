@@ -10,7 +10,7 @@ public interface IRepository<T> where T : class
     
     Task<T?> GetByIdAsync(int id); 
     
-    Task<List<T?>> GetByUserIdAsync(int? userId);
+    // Task<List<T?>> GetByUserIdAsync(int userId);
     
     Task SaveChangesAsync();
 }

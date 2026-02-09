@@ -16,10 +16,11 @@ public static class DependencyInjection
         services.AddDbContext<PokemonDbContext>(options =>
         {
             options.UseNpgsql(
-                config.GetConnectionString("NeonDb"));
+                config.GetConnectionString("DefaultConnection"));
         });
 
         services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
+        services.AddScoped<IUserOwnedRepository<Domain.Models.Pokemon>, UserOwnedRepository<Domain.Models.Pokemon>>();
 
         return services;
     }

@@ -1,15 +1,95 @@
 ﻿@page "/team"
+@rendermode InteractiveServer
+@inject PokemonService PokemonService
+@using Pokemon.Application.Services
+@using Pokemon.Domain.Models
 
-<h1>Your Team</h1>
-<p>Your captured Pokémon will appear here.</p>
+<div class="container">
+    <h1 class="text-center my-2 fw-bold text-danger">Your Team</h1>
+    <p class="text-center text-muted mb-5">
+        Build your dream team (max 3 Pokémon)
+    </p>
 
-<div class="team-grid">
-    @for (int i = 0; i < 6; i++)
+    @if (isLoading)
     {
-        <div class="pokemon-slot">
-            <div class="sprite-box">[Sprite]</div>
-            <p><strong>Name:</strong> Empty</p>
-            <p><strong>Type:</strong> —</p>
+        <div class="text-center">
+            <div class="spinner-border text-danger" role="status"></div>
+            <p class="mt-2">Loading your team...</p>
         </div>
     }
+    else if (!userTeam.Any())
+    {
+        <div class="text-center">
+            <p class="text-muted mb-4">Your team is empty. Start catching Pokémon!</p>
+            <a href="/" class="btn btn-danger">Go to Pokédex</a>
+        </div>
+    }
+    else
+    {
+        <div class="row justify-content-center g-4">
+            @foreach (var pokemon in userTeam)
+            {
+                <div class="col-12 col-sm-6 col-md-4">
+                    <div class="card text-center shadow-sm h-100">
+                        @if (!string.IsNullOrEmpty(pokemon.Sprite))
+                        {
+                            <img src="@pokemon.Sprite"
+                                 class="card-img-top bg-light"
+                                 alt="@pokemon.Name"
+                                 style="height: 150px; object-fit: contain; padding: 1rem;" />
+                        }
+                        else
+                        {
+                            <div class="card-img-top bg-light d-flex align-items-center justify-content-center"
+                                 style="height: 150px;">
+                                <span class="text-muted fs-1">🎮</span>
+                            </div>
+                        }
+
+                        <div class="card-body">
+                            <h5 class="card-title text-capitalize fw-bold mb-2">
+                                @pokemon.Name
+                            </h5>
+                            <span class="badge bg-secondary text-capitalize mb-3">
+                                @pokemon.Type
+                            </span>
+
+                            <button class="btn btn-danger btn-sm w-100" @onclick="() => RemoveFromTeam(pokemon)">
+                                Remove from Team
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    <div class="text-center m-5">
+        <a href="/fight" class="btn btn-danger p-2 fw-bold display-2">🥊💥Battle Using This Team💥🥊</a>
+    </div>
 </div>
+
+
+@code {
+
+    private List<Pokemon> userTeam = new();
+    private bool isLoading = true;
+    private int currentUserId = 1; // TODO: get from login page/db? how to store???????????
+    
+    protected override async Task OnInitializedAsync()
+    {
+        // ApiPokemonResult gets Name and a URL to more info
+        userTeam = await PokemonService.GetUserTeamAsync(currentUserId);
+        
+        isLoading = false;
+    }
+    
+    private async Task RemoveFromTeam(Pokemon pokemon)
+    {
+        await PokemonService.RemovePokemonFromTeamAsync(pokemon.Id, pokemon.UserId);
+
+        userTeam.Remove(pokemon);
+
+        StateHasChanged();
+    }
+    
+}

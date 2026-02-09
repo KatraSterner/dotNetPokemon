@@ -7,11 +7,13 @@ namespace Pokemon.Application.Services;
 public class PokemonService
 {
     private readonly IRepository<Domain.Models.Pokemon> _pokemonRepo;
+    private readonly IUserOwnedRepository<Domain.Models.Pokemon> _userOwnedRepo;
     private readonly HttpClient _http;
     
-    public PokemonService(IRepository<Domain.Models.Pokemon> pokemonRepo, HttpClient http)
+    public PokemonService(IRepository<Domain.Models.Pokemon> pokemonRepo, IUserOwnedRepository<Domain.Models.Pokemon> userOwnedRepo, HttpClient http)
     {
         _pokemonRepo = pokemonRepo;
+        _userOwnedRepo = userOwnedRepo;
         _http = http;
     }
     
@@ -22,10 +24,16 @@ public class PokemonService
     public async Task<List<Domain.Models.Pokemon>> GetUserTeamAsync(int userId) // ------------------------------------------------
     {
         // get all Pokémon in database with this userID
+        return await _userOwnedRepo.GetByUserIdAsync((userId));
+    }
+    /*
+    public async Task<List<Domain.Models.Pokemon>> GetUserTeamAsync(int userId) // ------------------------------------------------
+    {
         return await _pokemonRepo.GetByUserIdAsync(userId);
     }
+    */
 
-    public async Task AddPokemonToTeamAsync(string name, string type, string sprite, int userId) // --------------
+    public async Task AddPokemonToTeamAsync(ApiPokemonDetails pokemon, int userId) // --------------
     {
         // check that team is not full (max of 3)
         var userTeam = await GetUserTeamAsync(userId);
@@ -35,30 +43,37 @@ public class PokemonService
         }
         
         // create a Pokémon object using data from API item selected
-        var pokemon = new Domain.Models.Pokemon
+        var newPokemon = new Domain.Models.Pokemon
         {
-            Name = name,
-            Type = type,
-            Sprite = sprite,
+            Name = pokemon.Name,
+            Type = pokemon.Types?.FirstOrDefault().Type.Name,
+            Sprite = pokemon.Sprites.Front_Default,
             UserId = userId
         };
         
         // add Pokémon under this user to the database
-        await _pokemonRepo.AddAsync(pokemon);
+        await _pokemonRepo.AddAsync(newPokemon);
         await _pokemonRepo.SaveChangesAsync();
     }
 
     public async Task RemovePokemonFromTeamAsync(int pokemonId, int userId) // -----------------------------------
     {
         // find the given Pokémon for this user and delete it from the database
+        /*
         var team = await GetUserTeamAsync(userId);
         var pokemon = team.FirstOrDefault(p => p.Id == pokemonId);
+        */
+        var pokemon = await _userOwnedRepo
+            .GetByUserIdAsync(userId)
+            .ContinueWith(t => t.Result.FirstOrDefault(p => p.Id == pokemonId));
         
         if (pokemon == null)
             throw new Exception($"Could not find pokemon with id: {pokemonId}, under user: {userId}");
         
-        await _pokemonRepo.RemoveAsync(pokemon);
-        await _pokemonRepo.SaveChangesAsync();
+        //await _pokemonRepo.RemoveAsync(pokemon);
+        //await _pokemonRepo.SaveChangesAsync();
+        await _userOwnedRepo.RemoveAsync(pokemon);
+        await _userOwnedRepo.SaveChangesAsync();
     }
     
     

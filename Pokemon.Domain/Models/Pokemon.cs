@@ -1,6 +1,8 @@
-﻿namespace Pokemon.Domain.Models;
+﻿using Pokemon.Domain.Interfaces;
 
-public class Pokemon
+namespace Pokemon.Domain.Models;
+
+public class Pokemon : IUserOwnedEntity
 {
     public int Id { get; set; }
     
