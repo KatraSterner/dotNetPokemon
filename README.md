@@ -1,6 +1,6 @@
 # dotNetPokemon
 - [outline](#application-outline)
-- [to run](#to-run-)
+- [to run](#to-run)
 ## Application Outline
 ### Purpose
 This application utilizes .NET 9 to access the Pokémon API. It gets the first 50 Pokémon by
