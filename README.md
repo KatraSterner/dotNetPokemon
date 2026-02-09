@@ -1,6 +1,6 @@
 # dotNetPokemon
-
----
+- [outline](#application-outline)
+- [to run](#to-run-)
 ## Application Outline
 ### Purpose
 This application utilizes .NET 9 to access the Pokémon API. It gets the first 50 Pokémon by
@@ -16,7 +16,7 @@ battle resul to the user after the battle.
 - Neon DB
 - [PokeAPI](https://pokeapi.co)
 - OpenIddict (planned)
-- GitHub
+- [GitHub](https://github.com/KatraSterner/dotNetPokemon)
 - JetBrains Rider
 
 ### Developers
@@ -25,8 +25,7 @@ battle resul to the user after the battle.
 - Ylyas Movlyamov
 - Marcie Benacka
 
----
-## To Run: 
+## To Run
 ### insert user-secrets
 check user-secrets were created correctly(check teams):
 ```
@@ -36,4 +35,3 @@ to run the project in development mode NOT PRODUCTION
 ```
 dotnet run
 ``` 
----
