@@ -35,6 +35,10 @@ database connection:
 ```
 dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Host=ep-wispy-sound-a8s6owj4-pooler.eastus2.azure.neon.tech;Database=neondb;Username=neondb_owner;Password=npg_XnENT4zRevA6;SslMode=Require;"
 ```
+check they were created correctly:
+```
+dotnet user-secrets list
+```
 to run the project in development mode NOT PRODUCTION
 ```
 dotnet run
