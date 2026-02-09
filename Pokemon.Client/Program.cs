@@ -1,4 +1,3 @@
-using System.Data.Common;
 using Pokemon.Application;
 using Pokemon.Client.Components;
 using Pokemon.Infrastructure;
@@ -14,6 +13,13 @@ builder.Services.AddApplication();
 builder.Services.AddInfrastructure(
     builder.Configuration
 );
+
+Console.WriteLine("--------------------------------------------------------------------------------------");
+Console.WriteLine(builder.Configuration.GetConnectionString("DefaultConnection"));
+Console.WriteLine("ENV: " + builder.Environment.EnvironmentName);
+Console.WriteLine("APP: " + builder.Environment.ApplicationName);
+Console.WriteLine("--------------------------------------------------------------------------------------");
+
 
 builder.Services.AddHttpClient();
 // /\ /\ /\ /\ /\ added /\ /\ /\ /\ /\

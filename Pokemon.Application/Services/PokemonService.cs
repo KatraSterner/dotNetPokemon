@@ -1,5 +1,5 @@
 ﻿using System.Net.Http.Json;
-
+using Microsoft.Extensions.Configuration;
 using Pokemon.Domain.Interfaces;
 
 namespace Pokemon.Application.Services;
@@ -9,16 +9,17 @@ public class PokemonService
     private readonly IRepository<Domain.Models.Pokemon> _pokemonRepo;
     private readonly IUserOwnedRepository<Domain.Models.Pokemon> _userOwnedRepo;
     private readonly HttpClient _http;
+    private readonly string _apiUrl;
     
-    public PokemonService(IRepository<Domain.Models.Pokemon> pokemonRepo, IUserOwnedRepository<Domain.Models.Pokemon> userOwnedRepo, HttpClient http)
+    public PokemonService(IRepository<Domain.Models.Pokemon> pokemonRepo, IUserOwnedRepository<Domain.Models.Pokemon> userOwnedRepo, HttpClient http, IConfiguration config)
     {
         _pokemonRepo = pokemonRepo;
         _userOwnedRepo = userOwnedRepo;
         _http = http;
+        _apiUrl = config["ApiSettings:PokemonApiUrl"];
+        
+        Console.WriteLine(_apiUrl);
     }
-    
-    // TODO: move to environment variable in azure when deployed-----------------------------------------------------------
-    private string ApiUrl = "https://pokeapi.co/api/v2/";
 
 // __________________________________________DATABASE OPERATIONS________________________________________________________
     public async Task<List<Domain.Models.Pokemon>> GetUserTeamAsync(int userId) // ------------------------------------------------
@@ -81,7 +82,7 @@ public class PokemonService
     public async Task<List<ApiPokemonResult>> GetPokemonFromApiAsync(int limit = 50) // --------------------------------
     {
         // get "all" Pokémon (top 50 by default) from API
-        var response = await _http.GetFromJsonAsync<ApiPokemonResponse>($"{ApiUrl}pokemon?limit={limit}");
+        var response = await _http.GetFromJsonAsync<ApiPokemonResponse>($"{_apiUrl}pokemon?limit={limit}");
          
         return response.Results;
     }
@@ -98,7 +99,7 @@ public class PokemonService
         // search the api for a specific Pokémon
         try
         {
-            return await _http.GetFromJsonAsync<ApiPokemonDetails>($"{ApiUrl}pokemon/{queryName}");
+            return await _http.GetFromJsonAsync<ApiPokemonDetails>($"{_apiUrl}pokemon/{queryName}");
         }
         catch
         {
