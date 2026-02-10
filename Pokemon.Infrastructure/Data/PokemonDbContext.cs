@@ -12,7 +12,7 @@ public class PokemonDbContext
     public PokemonDbContext(DbContextOptions<PokemonDbContext> options)
         : base(options) { }
 
-    // Your app tables
+    // App tables
     public DbSet<Domain.Models.Pokemon> Pokemon => Set<Domain.Models.Pokemon>();
     public DbSet<UserAuditLog> AuditLogs => Set<UserAuditLog>();
 }
