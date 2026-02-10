@@ -1,0 +1,27 @@
+﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Pokemon.Domain.Interfaces;
+using Pokemon.Infrastructure.Data;
+using Pokemon.Infrastructure.Repositories;
+
+namespace Pokemon.Infrastructure;
+
+public static class DependencyInjection
+{
+    public static IServiceCollection AddInfrastructure(
+        this IServiceCollection services,
+        IConfiguration config)
+    {
+        services.AddDbContext<PokemonDbContext>(options =>
+        {
+            options.UseNpgsql(
+                config.GetConnectionString("DefaultConnection"));
+        });
+
+        services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
+        services.AddScoped<IUserOwnedRepository<Domain.Models.Pokemon>, UserOwnedRepository<Domain.Models.Pokemon>>();
+
+        return services;
+    }
+}

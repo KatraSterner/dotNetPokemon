@@ -1,10 +1,28 @@
+using Pokemon.Application;
 using Pokemon.Client.Components;
+using Pokemon.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
+
+// \/ \/ \/ \/ \/ added \/ \/ \/ \/ \/
+builder.Services.AddApplication();
+builder.Services.AddInfrastructure(
+    builder.Configuration
+);
+
+Console.WriteLine("--------------------------------------------------------------------------------------");
+Console.WriteLine(builder.Configuration.GetConnectionString("DefaultConnection"));
+Console.WriteLine("ENV: " + builder.Environment.EnvironmentName);
+Console.WriteLine("APP: " + builder.Environment.ApplicationName);
+Console.WriteLine("--------------------------------------------------------------------------------------");
+
+
+builder.Services.AddHttpClient();
+// /\ /\ /\ /\ /\ added /\ /\ /\ /\ /\
 
 var app = builder.Build();
 
@@ -15,9 +33,10 @@ if (!app.Environment.IsDevelopment())
     // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
-app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
+app.UseStatusCodePagesWithReExecute("/not-found");
 app.UseHttpsRedirection();
 
+app.UseStaticFiles();
 app.UseAntiforgery();
 
 app.MapStaticAssets();
