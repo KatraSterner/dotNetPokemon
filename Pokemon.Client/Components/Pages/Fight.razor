@@ -1,22 +1,115 @@
 ﻿@page "/fight"
+@rendermode InteractiveServer
+@inject PokemonService PokemonService
+@using Pokemon.Application.Services
+@using Pokemon.Domain.Models
 
-<h1>Battle Arena</h1>
-<p>Battle logic will be implemented later.</p>
+<div class="container">
+    <h1 class="text-center my-3 fw-bold text-danger">Battle Arena</h1>
+    <p class="text-center text-muted mb-4">
+        Your team will battle the Rock‑Type Gym Leader!
+    </p>
 
-<div class="battle-container">
-    <div class="pokemon-side">
-        <h3>Your Pokémon</h3>
-        <div class="sprite-box">[Your Sprite]</div>
-        <p><strong>Name:</strong> TBD</p>
-        <p><strong>HP:</strong> ???</p>
-    </div>
+    @if (isLoading)
+    {
+        <div class="text-center">
+            <div class="spinner-border text-danger" role="status"></div>
+            <p class="mt-2">Loading your team...</p>
+        </div>
+    }
+    else if (userTeam.Count != 3)
+    {
+        <div class="alert alert-warning text-center">
+            You must have exactly <strong>3 Pokémon</strong> to battle.
+        </div>
 
-    <div class="pokemon-side">
-        <h3>Opponent</h3>
-        <div class="sprite-box">[Enemy Sprite]</div>
-        <p><strong>Name:</strong> TBD</p>
-        <p><strong>HP:</strong> ???</p>
-    </div>
+        <div class="text-center mt-4">
+            <a href="/team" class="btn btn-danger">Go to Team Page</a>
+        </div>
+    }
+    else
+    {
+        <div class="row justify-content-center g-4 mb-4">
+            @foreach (var pokemon in userTeam)
+            {
+                <div class="col-12 col-sm-6 col-md-4">
+                    <div class="card text-center shadow-sm h-100">
+
+                        @if (!string.IsNullOrEmpty(pokemon.Sprite))
+                        {
+                            <img src="@pokemon.Sprite"
+                                 class="card-img-top bg-light"
+                                 alt="@pokemon.Name"
+                                 style="height: 200px; object-fit: contain;" />
+                        }
+                        else
+                        {
+                            <div class="card-img-top bg-light d-flex align-items-center justify-content-center"
+                                 style="height: 200px;">
+                                <span class="text-muted fs-1">🎮</span>
+                            </div>
+                        }
+
+                        <div class="card-body">
+                            <h5 class="card-title text-capitalize fw-bold mb-2">
+                                @pokemon.Name
+                            </h5>
+                            <span class="badge bg-secondary text-capitalize mb-2">
+                                @pokemon.Type
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <div class="text-center mb-4">
+            <button class="btn btn-danger btn-lg px-4"
+                    @onclick="StartBattle"
+                    disabled="@isBattling">
+                @if (isBattling)
+                {
+                    <span class="spinner-border spinner-border-sm me-2"></span>
+                    <span>Battling...</span>
+                }
+                else
+                {
+                    <span>🥊 Start Battle 🥊</span>
+                }
+            </button>
+        </div>
+
+        @if (!string.IsNullOrEmpty(battleResult))
+        {
+            <div class="alert alert-info white-space-pre-line text-center fs-5">
+                @battleResult
+            </div>
+        }
+    }
 </div>
 
-<button disabled>Attack (coming soon)</button>
+@code {
+    private List<Pokemon> userTeam = new();
+    private bool isLoading = true;
+    private bool isBattling = false;
+    private string battleResult = string.Empty;
+
+    private int currentUserId = 1; // same as Team page
+
+    protected override async Task OnInitializedAsync()
+    {
+        userTeam = await PokemonService.GetUserTeamAsync(currentUserId);
+        isLoading = false;
+    }
+
+    private async Task StartBattle()
+    {
+        isBattling = true;
+
+        battleResult = await PokemonService.GymBattleAsync(currentUserId);
+
+        isBattling = false;
+        StateHasChanged();
+    }
+}
+}

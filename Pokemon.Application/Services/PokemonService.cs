@@ -251,8 +251,104 @@ public class PokemonService
                $"\n\t{outcomes[2]}";
         
     }
+    
+    private static readonly Dictionary<string, Dictionary<string, double>> TypeChart =
+    new(StringComparer.OrdinalIgnoreCase)
+{
+    ["normal"] = new() {
+        ["rock"] = 0.5, ["ghost"] = 0, ["steel"] = 0.5
+    },
+    ["fire"] = new() {
+        ["grass"] = 2, ["ice"] = 2, ["bug"] = 2, ["steel"] = 2,
+        ["fire"] = 0.5, ["water"] = 0.5, ["rock"] = 0.5, ["dragon"] = 0.5
+    },
+    ["water"] = new() {
+        ["fire"] = 2, ["ground"] = 2, ["rock"] = 2,
+        ["water"] = 0.5, ["grass"] = 0.5, ["dragon"] = 0.5
+    },
+    ["electric"] = new() {
+        ["water"] = 2, ["flying"] = 2,
+        ["electric"] = 0.5, ["grass"] = 0.5, ["dragon"] = 0.5,
+        ["ground"] = 0
+    },
+    ["grass"] = new() {
+        ["water"] = 2, ["ground"] = 2, ["rock"] = 2,
+        ["fire"] = 0.5, ["grass"] = 0.5, ["poison"] = 0.5,
+        ["flying"] = 0.5, ["bug"] = 0.5, ["dragon"] = 0.5, ["steel"] = 0.5
+    },
+    ["ice"] = new() {
+        ["grass"] = 2, ["ground"] = 2, ["flying"] = 2, ["dragon"] = 2,
+        ["fire"] = 0.5, ["water"] = 0.5, ["ice"] = 0.5, ["steel"] = 0.5
+    },
+    ["fighting"] = new() {
+        ["normal"] = 2, ["ice"] = 2, ["rock"] = 2, ["dark"] = 2, ["steel"] = 2,
+        ["poison"] = 0.5, ["flying"] = 0.5, ["psychic"] = 0.5, ["bug"] = 0.5,
+        ["fairy"] = 0.5, ["ghost"] = 0
+    },
+    ["poison"] = new() {
+        ["grass"] = 2, ["fairy"] = 2,
+        ["poison"] = 0.5, ["ground"] = 0.5, ["rock"] = 0.5, ["ghost"] = 0.5,
+        ["steel"] = 0
+    },
+    ["ground"] = new() {
+        ["fire"] = 2, ["electric"] = 2, ["poison"] = 2, ["rock"] = 2, ["steel"] = 2,
+        ["grass"] = 0.5, ["bug"] = 0.5, ["flying"] = 0
+    },
+    ["flying"] = new() {
+        ["grass"] = 2, ["fighting"] = 2, ["bug"] = 2,
+        ["electric"] = 0.5, ["rock"] = 0.5, ["steel"] = 0.5
+    },
+    ["psychic"] = new() {
+        ["fighting"] = 2, ["poison"] = 2,
+        ["psychic"] = 0.5, ["steel"] = 0.5, ["dark"] = 0
+    },
+    ["bug"] = new() {
+        ["grass"] = 2, ["psychic"] = 2, ["dark"] = 2,
+        ["fire"] = 0.5, ["fighting"] = 0.5, ["poison"] = 0.5,
+        ["flying"] = 0.5, ["ghost"] = 0.5, ["steel"] = 0.5, ["fairy"] = 0.5
+    },
+    ["rock"] = new() {
+        ["fire"] = 2, ["ice"] = 2, ["flying"] = 2, ["bug"] = 2,
+        ["fighting"] = 0.5, ["ground"] = 0.5, ["steel"] = 0.5
+    },
+    ["ghost"] = new() {
+        ["psychic"] = 2, ["ghost"] = 2,
+        ["dark"] = 0.5, ["normal"] = 0
+    },
+    ["dragon"] = new() {
+        ["dragon"] = 2,
+        ["steel"] = 0.5, ["fairy"] = 0
+    },
+    ["dark"] = new() {
+        ["psychic"] = 2, ["ghost"] = 2,
+        ["fighting"] = 0.5, ["dark"] = 0.5, ["fairy"] = 0.5
+    },
+    ["steel"] = new() {
+        ["ice"] = 2, ["rock"] = 2, ["fairy"] = 2,
+        ["fire"] = 0.5, ["water"] = 0.5, ["electric"] = 0.5, ["steel"] = 0.5
+    },
+    ["fairy"] = new() {
+        ["fighting"] = 2, ["dragon"] = 2, ["dark"] = 2,
+        ["fire"] = 0.5, ["poison"] = 0.5, ["steel"] = 0.5
+    }
+};
+    
+    private bool IsTypeStrongAgainst(string attacker, string defender)
+    {
+        if (string.IsNullOrWhiteSpace(attacker) || string.IsNullOrWhiteSpace(defender))
+            return false;
 
-    private bool IsTypeStrongAgainst(string type1, string type2) // - - - - - - - - - - - - - - - - - - - - - - - - - - 
+        if (!TypeChart.TryGetValue(attacker.ToLower(), out var matchups))
+            return false;
+
+        if (!matchups.TryGetValue(defender.ToLower(), out var multiplier))
+            return false;
+
+        return multiplier > 1.0;
+    }
+    
+
+    /*private bool IsTypeStrongAgainst(string type1, string type2) // - - - - - - - - - - - - - - - - - - - - - - - - - - 
     {
         // compare the types to determine the winner and return win status
         var attacker = type1.ToLower();
@@ -264,5 +360,5 @@ public class PokemonService
                || (attacker == "electric" && defender == "water")
                || (attacker == "rock" && defender == "fire");
         // if attacker is water and defender is fire, return true -> win
-    }
+    }*/
 }
