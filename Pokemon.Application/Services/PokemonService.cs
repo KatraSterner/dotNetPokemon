@@ -1,4 +1,9 @@
-﻿using System.Net.Http.Json;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net.Http;
+using System.Net.Http.Json;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Pokemon.Domain.Interfaces;
 
@@ -82,8 +87,8 @@ public class PokemonService
     public async Task<List<ApiPokemonResult>> GetPokemonFromApiAsync(int limit = 50) // --------------------------------
     {
         // get "all" Pokémon (top 50 by default) from API
-        var response = await _http.GetFromJsonAsync<ApiPokemonResponse>($"{_apiUrl}pokemon?limit={limit}");
-         
+        //var response = await _http.GetFromJsonAsync<ApiPokemonResponse>($"{_apiUrl}pokemon?limit={limit}");
+        var response = await _http.GetFromJsonAsync<ApiPokemonResponse>($"pokemon?limit={limit}");
         return response.Results;
     }
     
@@ -265,4 +270,11 @@ public class PokemonService
                || (attacker == "rock" && defender == "fire");
         // if attacker is water and defender is fire, return true -> win
     }
+    
+    // for the report, tis allows Admin/global report access later
+    public async Task<List<Domain.Models.Pokemon>> GetAllPokemonAsync()
+    {
+        return await _pokemonRepo.GetAllAsync();
+    }
+
 }

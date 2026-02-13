@@ -12,11 +12,32 @@
     <ImportMap />
     <link rel="icon" type="image/png" href="favicon.png" />
     <HeadOutlet />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 </head>
 
 <body>
     <Routes />
     <script src="@Assets["_framework/blazor.web.js"]"></script>
-</body>
+    <script>
+    window.renderChart = (typeCounts) => {
+        const ctx = document.getElementById('typeChart');
+
+        const labels = Object.keys(typeCounts);
+        const data = Object.values(typeCounts);
+
+        new Chart(ctx, {
+            type: 'pie',
+            data: {
+                labels: labels,
+                datasets: [{
+                    data: data
+                }]
+            }
+        });
+    }
+</script>
+
+    </body>
 
 </html>
