@@ -7,20 +7,20 @@
 <div class="container">
     <h1 class="text-center my-3 fw-bold text-danger">Battle Arena</h1>
     <p class="text-center text-muted mb-4">
-        Your team will battle the Rock‑Type Gym Leader!
+        Face a random opponent: Gym Leader, Elite Four, Champion, or a Random Trainer!
     </p>
 
     @if (isLoading)
     {
         <div class="text-center">
             <div class="spinner-border text-danger" role="status"></div>
-            <p class="mt-2">Loading your team...</p>
+            <p class="mt-2">Preparing your battle...</p>
         </div>
     }
     else if (userTeam.Count != 3)
     {
         <div class="alert alert-warning text-center">
-            You must have exactly <strong>3 Pokémon</strong> to battle.
+            You must have exactly <strong>3 Pokémon</strong> on your team to battle.
         </div>
 
         <div class="text-center mt-4">
@@ -29,60 +29,119 @@
     }
     else
     {
-        <div class="row justify-content-center g-4 mb-4">
-            @foreach (var pokemon in userTeam)
-            {
-                <div class="col-12 col-sm-6 col-md-4">
-                    <div class="card text-center shadow-sm h-100">
+        <div class="row mb-4">
 
-                        @if (!string.IsNullOrEmpty(pokemon.Sprite))
+            <!-- USER TEAM -->
+            <div class="col-md-6 text-center mb-3">
+                <h4 class="fw-bold text-danger">Your Team</h4>
+
+                <div class="row justify-content-center g-3">
+                    @for (int i = 0; i < userTeam.Count; i++)
+                    {
+                        var pokemon = userTeam[i];
+                        var round = battleResult?.Rounds.ElementAtOrDefault(i);
+                        var outcome = round?.Outcome ?? string.Empty;
+
+                        <div class="col-12 col-sm-6">
+                            <div class="card text-center shadow-sm h-100 @GetBorderClass(outcome)">
+                                <img src="@pokemon.Sprite"
+                                     class="card-img-top bg-light"
+                                     alt="@pokemon.Name"
+                                     style="height: 150px; object-fit: contain;" />
+
+                                <div class="card-body">
+                                    <h5 class="card-title text-capitalize fw-bold mb-1">
+                                        @pokemon.Name
+                                    </h5>
+                                    <span class="badge bg-secondary text-capitalize mb-2">
+                                        @pokemon.Type
+                                    </span>
+
+                                    @if (!string.IsNullOrEmpty(outcome))
+                                    {
+                                        <div class="mt-1 small fw-bold">@outcome</div>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- OPPONENT TEAM -->
+            <div class="col-md-6 text-center mb-3">
+                <h4 class="fw-bold text-primary">Opponent</h4>
+
+                @if (currentOpponent is not null)
+                {
+                    <div class="mb-3">
+                        <h5 class="fw-bold">@currentOpponent.Name</h5>
+
+                        @if (!string.IsNullOrEmpty(currentOpponent.SpriteUrl))
                         {
-                            <img src="@pokemon.Sprite"
-                                 class="card-img-top bg-light"
-                                 alt="@pokemon.Name"
-                                 style="height: 200px; object-fit: contain;" />
+                            <img src="@currentOpponent.SpriteUrl"
+                                 alt="@currentOpponent.Name"
+                                 style="height: 120px; object-fit: contain;" />
                         }
-                        else
+                    </div>
+
+                    <div class="row justify-content-center g-3">
+                        @for (int i = 0; i < currentOpponent.Team.Count; i++)
                         {
-                            <div class="card-img-top bg-light d-flex align-items-center justify-content-center"
-                                 style="height: 200px;">
-                                <span class="text-muted fs-1">🎮</span>
+                            var opp = currentOpponent.Team[i];
+                            var round = battleResult?.Rounds.ElementAtOrDefault(i);
+                            var outcome = round?.Outcome ?? string.Empty;
+
+                            <div class="col-12 col-sm-6">
+                                <div class="card text-center shadow-sm h-100 @GetBorderClass(OpponentPerspective(outcome))">
+                                    <img src="@opp.SpriteUrl"
+                                         class="card-img-top bg-light"
+                                         alt="@opp.Name"
+                                         style="height: 150px; object-fit: contain;" />
+
+                                    <div class="card-body">
+                                        <h5 class="card-title text-capitalize fw-bold mb-1">
+                                            @opp.Name
+                                        </h5>
+                                        <span class="badge bg-secondary text-capitalize mb-2">
+                                            @opp.Type
+                                        </span>
+
+                                        @if (!string.IsNullOrEmpty(outcome))
+                                        {
+                                            <div class="mt-1 small fw-bold">
+                                                @OpponentPerspective(outcome)
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
                             </div>
                         }
-
-                        <div class="card-body">
-                            <h5 class="card-title text-capitalize fw-bold mb-2">
-                                @pokemon.Name
-                            </h5>
-                            <span class="badge bg-secondary text-capitalize mb-2">
-                                @pokemon.Type
-                            </span>
-                        </div>
                     </div>
-                </div>
-            }
+                }
+            </div>
+
         </div>
 
+        <!-- BUTTONS -->
         <div class="text-center mb-4">
-            <button class="btn btn-danger btn-lg px-4"
-                    @onclick="StartBattle"
+            <button class="btn btn-danger btn-lg px-4 me-2"
+                    @onclick="StartBattle">
+                🥊 Start Battle 🥊
+            </button>
+
+            <button class="btn btn-outline-secondary btn-lg px-4"
+                    @onclick="NewOpponent"
                     disabled="@isBattling">
-                @if (isBattling)
-                {
-                    <span class="spinner-border spinner-border-sm me-2"></span>
-                    <span>Battling...</span>
-                }
-                else
-                {
-                    <span>🥊 Start Battle 🥊</span>
-                }
+                🔁 New Opponent
             </button>
         </div>
 
-        @if (!string.IsNullOrEmpty(battleResult))
+        <!-- OVERALL RESULT -->
+        @if (battleResult is not null)
         {
-            <div class="alert alert-info white-space-pre-line text-center fs-5">
-                @battleResult
+            <div class="alert alert-info text-center fs-5">
+                @battleResult.OverallResult
             </div>
         }
     }
@@ -90,26 +149,63 @@
 
 @code {
     private List<Pokemon> userTeam = new();
+    private PokemonService.BattleOpponent? currentOpponent;
+    private PokemonService.BattleResult? battleResult;
+
     private bool isLoading = true;
     private bool isBattling = false;
-    private string battleResult = string.Empty;
 
-    private int currentUserId = 1; // same as Team page
+    private int currentUserId = 1;
 
     protected override async Task OnInitializedAsync()
     {
         userTeam = await PokemonService.GetUserTeamAsync(currentUserId);
+
+        if (userTeam.Count == 3)
+        {
+            currentOpponent = await PokemonService.GetRandomOpponentAsync();
+        }
+
         isLoading = false;
     }
 
     private async Task StartBattle()
     {
+        if (currentOpponent is null)
+            return;
+
         isBattling = true;
 
-        battleResult = await PokemonService.GymBattleAsync(currentUserId);
+        battleResult = await PokemonService.BattleAsync(currentUserId, currentOpponent);
 
         isBattling = false;
         StateHasChanged();
     }
-}
-}
+
+    private async Task NewOpponent()
+    {
+        battleResult = null;
+
+        currentOpponent = await PokemonService.GetRandomOpponentAsync();
+
+        StateHasChanged();
+    }
+
+    private string GetBorderClass(string outcome) =>
+        outcome switch
+        {
+            "Win" => "border border-3 border-success",
+            "Lose" => "border border-3 border-danger",
+            "Tie" => "border border-3 border-secondary",
+            _ => "border border-0"
+        };
+
+    private string OpponentPerspective(string userOutcome) =>
+        userOutcome switch
+        {
+            "Win" => "Lose",
+            "Lose" => "Win",
+            "Tie" => "Tie",
+            _ => string.Empty
+        };
+}}
