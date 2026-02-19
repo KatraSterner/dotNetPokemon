@@ -1,4 +1,11 @@
+using System;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Pokemon.Application;
+using Pokemon.Application.Services;
 using Pokemon.Client.Components;
 using Pokemon.Infrastructure;
 
@@ -21,8 +28,14 @@ Console.WriteLine("APP: " + builder.Environment.ApplicationName);
 Console.WriteLine("--------------------------------------------------------------------------------------");
 
 
-builder.Services.AddHttpClient();
+builder.Services.AddHttpClient<PokemonService>(client =>
+{
+    client.BaseAddress = new Uri("https://pokeapi.co/api/v2/");
+});
+
 // /\ /\ /\ /\ /\ added /\ /\ /\ /\ /\
+
+builder.WebHost.UseUrls("http://localhost:5129");
 
 var app = builder.Build();
 

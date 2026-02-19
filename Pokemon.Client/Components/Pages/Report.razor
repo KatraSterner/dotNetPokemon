@@ -1,0 +1,97 @@
+@page "/report"
+@rendermode InteractiveServer
+@inject PokemonService PokemonService
+@using Pokemon.Domain.Models
+@using System.Text.Json
+@using Pokemon.Application.Services
+
+<h1 class="text-center text-danger my-4"> Pokémon Report Dashboard</h1>
+
+@if (isLoading)
+{
+    <div class="text-center">
+        <div class="spinner-border text-danger"></div>
+        <p>Loading report...</p>
+    </div>
+}
+else
+{
+    <div class="container">
+
+        <!-- Summary Cards -->
+        <div class="row mb-4">
+            <div class="col-md-4">
+                <div class="card text-center shadow-sm">
+                    <div class="card-body">
+                        <h5>Total Saved Pokémon</h5>
+                        <h2 class="text-danger">@totalCount</h2>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chart -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <h5>Type Distribution</h5>
+                <canvas id="typeChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Table -->
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h5>Saved Pokémon</h5>
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Type</th>
+                            <th>UserId</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var p in pokemonList)
+                        {
+                            <tr>
+                                <td class="text-capitalize">@p.Name</td>
+                                <td class="text-capitalize">@p.Type</td>
+                                <td>@p.UserId</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+}
+
+@code {
+    private List<Pokemon> pokemonList = new();
+    private bool isLoading = true;
+    private int totalCount;
+    private Dictionary<string, int> typeCounts = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        pokemonList = await PokemonService.GetAllPokemonAsync();
+        totalCount = pokemonList.Count;
+
+        typeCounts = pokemonList
+            .GroupBy(p => p.Type)
+            .ToDictionary(g => g.Key, g => g.Count());
+
+        isLoading = false;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await JS.InvokeVoidAsync("renderChart", typeCounts);
+        }
+    }
+
+    [Inject] private IJSRuntime JS { get; set; }
+}
