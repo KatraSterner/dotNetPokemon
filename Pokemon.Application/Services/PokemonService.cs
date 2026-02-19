@@ -256,20 +256,426 @@ public class PokemonService
                $"\n\t{outcomes[2]}";
         
     }
-
-    private bool IsTypeStrongAgainst(string type1, string type2) // - - - - - - - - - - - - - - - - - - - - - - - - - - 
-    {
-        // compare the types to determine the winner and return win status
-        var attacker = type1.ToLower();
-        var defender = type2.ToLower();
-        
-        return (attacker == "water" && defender == "fire")
-               || (attacker == "fire" && defender == "grass")
-               || (attacker == "grass" && defender == "water")
-               || (attacker == "electric" && defender == "water")
-               || (attacker == "rock" && defender == "fire");
-        // if attacker is water and defender is fire, return true -> win
+    
+   private static readonly Dictionary<string, Dictionary<string, double>> TypeChart =
+    new(StringComparer.OrdinalIgnoreCase)
+{
+    ["normal"] = new() { ["rock"] = 0.5, ["ghost"] = 0, ["steel"] = 0.5 },
+    ["fire"] = new() {
+        ["grass"] = 2, ["ice"] = 2, ["bug"] = 2, ["steel"] = 2,
+        ["fire"] = 0.5, ["water"] = 0.5, ["rock"] = 0.5, ["dragon"] = 0.5
+    },
+    ["water"] = new() {
+        ["fire"] = 2, ["ground"] = 2, ["rock"] = 2,
+        ["water"] = 0.5, ["grass"] = 0.5, ["dragon"] = 0.5
+    },
+    ["electric"] = new() {
+        ["water"] = 2, ["flying"] = 2,
+        ["electric"] = 0.5, ["grass"] = 0.5, ["dragon"] = 0.5,
+        ["ground"] = 0
+    },
+    ["grass"] = new() {
+        ["water"] = 2, ["ground"] = 2, ["rock"] = 2,
+        ["fire"] = 0.5, ["grass"] = 0.5, ["poison"] = 0.5,
+        ["flying"] = 0.5, ["bug"] = 0.5, ["dragon"] = 0.5, ["steel"] = 0.5
+    },
+    ["ice"] = new() {
+        ["grass"] = 2, ["ground"] = 2, ["flying"] = 2, ["dragon"] = 2,
+        ["fire"] = 0.5, ["water"] = 0.5, ["ice"] = 0.5, ["steel"] = 0.5
+    },
+    ["fighting"] = new() {
+        ["normal"] = 2, ["ice"] = 2, ["rock"] = 2, ["dark"] = 2, ["steel"] = 2,
+        ["poison"] = 0.5, ["flying"] = 0.5, ["psychic"] = 0.5, ["bug"] = 0.5,
+        ["fairy"] = 0.5, ["ghost"] = 0
+    },
+    ["poison"] = new() {
+        ["grass"] = 2, ["fairy"] = 2,
+        ["poison"] = 0.5, ["ground"] = 0.5, ["rock"] = 0.5, ["ghost"] = 0.5,
+        ["steel"] = 0
+    },
+    ["ground"] = new() {
+        ["fire"] = 2, ["electric"] = 2, ["poison"] = 2, ["rock"] = 2, ["steel"] = 2,
+        ["grass"] = 0.5, ["bug"] = 0.5, ["flying"] = 0
+    },
+    ["flying"] = new() {
+        ["grass"] = 2, ["fighting"] = 2, ["bug"] = 2,
+        ["electric"] = 0.5, ["rock"] = 0.5, ["steel"] = 0.5
+    },
+    ["psychic"] = new() {
+        ["fighting"] = 2, ["poison"] = 2,
+        ["psychic"] = 0.5, ["steel"] = 0.5, ["dark"] = 0
+    },
+    ["bug"] = new() {
+        ["grass"] = 2, ["psychic"] = 2, ["dark"] = 2,
+        ["fire"] = 0.5, ["fighting"] = 0.5, ["poison"] = 0.5,
+        ["flying"] = 0.5, ["ghost"] = 0.5, ["steel"] = 0.5, ["fairy"] = 0.5
+    },
+    ["rock"] = new() {
+        ["fire"] = 2, ["ice"] = 2, ["flying"] = 2, ["bug"] = 2,
+        ["fighting"] = 0.5, ["ground"] = 0.5, ["steel"] = 0.5
+    },
+    ["ghost"] = new() {
+        ["psychic"] = 2, ["ghost"] = 2,
+        ["dark"] = 0.5, ["normal"] = 0
+    },
+    ["dragon"] = new() {
+        ["dragon"] = 2,
+        ["steel"] = 0.5, ["fairy"] = 0
+    },
+    ["dark"] = new() {
+        ["psychic"] = 2, ["ghost"] = 2,
+        ["fighting"] = 0.5, ["dark"] = 0.5, ["fairy"] = 0.5
+    },
+    ["steel"] = new() {
+        ["ice"] = 2, ["rock"] = 2, ["fairy"] = 2,
+        ["fire"] = 0.5, ["water"] = 0.5, ["electric"] = 0.5, ["steel"] = 0.5
+    },
+    ["fairy"] = new() {
+        ["fighting"] = 2, ["dragon"] = 2, ["dark"] = 2,
+        ["fire"] = 0.5, ["poison"] = 0.5, ["steel"] = 0.5
     }
+};
+
+private bool IsTypeStrongAgainst(string attacker, string defender)
+{
+    if (!TypeChart.TryGetValue(attacker.ToLower(), out var matchups))
+        return false;
+
+    if (!matchups.TryGetValue(defender.ToLower(), out var multiplier))
+        return false;
+
+    return multiplier > 1.0;
+}
+    
+    public class BattleOpponent
+    {
+        public string Name { get; set; } = string.Empty;
+        public string SpriteUrl { get; set; } = string.Empty;
+        public List<OpponentPokemon> Team { get; set; } = new();
+        public bool IsBoss { get; set; }
+    }
+
+    public class OpponentPokemon
+    {
+        public string Name { get; set; } = string.Empty;
+        public string Type { get; set; } = string.Empty;
+        public string SpriteUrl { get; set; } = string.Empty;
+    }
+
+    public class BattleResult
+    {
+        public string OverallResult { get; set; } = string.Empty;
+        public List<PokemonRoundResult> Rounds { get; set; } = new();
+    }
+
+    public class PokemonRoundResult
+    {
+        public string UserPokemonName { get; set; } = string.Empty;
+        public string UserPokemonType { get; set; } = string.Empty;
+        public string OpponentPokemonName { get; set; } = string.Empty;
+        public string OpponentPokemonType { get; set; } = string.Empty;
+        public string Outcome { get; set; } = string.Empty; // Win / Lose / Tie
+    }
+    
+    private OpponentPokemon MakeOpponentPokemon(string name, string type, int pokedexId)
+    {
+        return new OpponentPokemon
+        {
+            Name = name,
+            Type = type,
+            SpriteUrl = $"https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/{pokedexId}.png"
+        };
+    }
+    
+    private List<BattleOpponent> GetAllBossOpponents()
+{
+    return new List<BattleOpponent>
+    {
+        // ------------------ GYM LEADERS ------------------
+
+        new BattleOpponent
+        {
+            Name = "Brock",
+            SpriteUrl = "/images/trainers/brock.png",
+            IsBoss = true,
+            Team = new()
+            {
+                MakeOpponentPokemon("Geodude", "rock", 74),
+                MakeOpponentPokemon("Onix", "rock", 95),
+                MakeOpponentPokemon("Rhyhorn", "rock", 111)
+            }
+        },
+
+        new BattleOpponent
+        {
+            Name = "Misty",
+            SpriteUrl = "/images/trainers/misty.png",
+            IsBoss = true,
+            Team = new()
+            {
+                MakeOpponentPokemon("Staryu", "water", 120),
+                MakeOpponentPokemon("Starmie", "water", 121),
+                MakeOpponentPokemon("Psyduck", "water", 54)
+            }
+        },
+
+        new BattleOpponent
+        {
+            Name = "Lt. Surge",
+            SpriteUrl = "/images/trainers/surge.png",
+            IsBoss = true,
+            Team = new()
+            {
+                MakeOpponentPokemon("Voltorb", "electric", 100),
+                MakeOpponentPokemon("Pikachu", "electric", 25),
+                MakeOpponentPokemon("Raichu", "electric", 26)
+            }
+        },
+
+        new BattleOpponent
+        {
+            Name = "Erika",
+            SpriteUrl = "/images/trainers/erika.png",
+            IsBoss = true,
+            Team = new()
+            {
+                MakeOpponentPokemon("Victreebel", "grass", 71),
+                MakeOpponentPokemon("Tangela", "grass", 114),
+                MakeOpponentPokemon("Vileplume", "grass", 45)
+            }
+        },
+
+        new BattleOpponent
+        {
+            Name = "Koga",
+            SpriteUrl = "/images/trainers/koga.png",
+            IsBoss = true,
+            Team = new()
+            {
+                MakeOpponentPokemon("Koffing", "poison", 109),
+                MakeOpponentPokemon("Muk", "poison", 89),
+                MakeOpponentPokemon("Weezing", "poison", 110)
+            }
+        },
+
+        new BattleOpponent
+        {
+            Name = "Sabrina",
+            SpriteUrl = "/images/trainers/sabrina.png",
+            IsBoss = true,
+            Team = new()
+            {
+                MakeOpponentPokemon("Kadabra", "psychic", 64),
+                MakeOpponentPokemon("Mr. Mime", "psychic", 122),
+                MakeOpponentPokemon("Alakazam", "psychic", 65)
+            }
+        },
+
+        new BattleOpponent
+        {
+            Name = "Blaine",
+            SpriteUrl = "/images/trainers/blaine.png",
+            IsBoss = true,
+            Team = new()
+            {
+                MakeOpponentPokemon("Growlithe", "fire", 58),
+                MakeOpponentPokemon("Ponyta", "fire", 77),
+                MakeOpponentPokemon("Arcanine", "fire", 59)
+            }
+        },
+
+        new BattleOpponent
+        {
+            Name = "Giovanni",
+            SpriteUrl = "/images/trainers/giovanni.png",
+            IsBoss = true,
+            Team = new()
+            {
+                MakeOpponentPokemon("Rhyhorn", "ground", 111),
+                MakeOpponentPokemon("Dugtrio", "ground", 51),
+                MakeOpponentPokemon("Nidoking", "ground", 34)
+            }
+        },
+
+        // ------------------ ELITE FOUR ------------------
+
+        new BattleOpponent
+        {
+            Name = "Lorelei",
+            SpriteUrl = "/images/trainers/lorelei.png",
+            IsBoss = true,
+            Team = new()
+            {
+                MakeOpponentPokemon("Dewgong", "ice", 87),
+                MakeOpponentPokemon("Cloyster", "ice", 91),
+                MakeOpponentPokemon("Lapras", "ice", 131)
+            }
+        },
+
+        new BattleOpponent
+        {
+            Name = "Bruno",
+            SpriteUrl = "/images/trainers/bruno.png",
+            IsBoss = true,
+            Team = new()
+            {
+                MakeOpponentPokemon("Onix", "rock", 95),
+                MakeOpponentPokemon("Hitmonlee", "fighting", 106),
+                MakeOpponentPokemon("Machamp", "fighting", 68)
+            }
+        },
+
+        new BattleOpponent
+        {
+            Name = "Agatha",
+            SpriteUrl = "/images/trainers/agatha.png",
+            IsBoss = true,
+            Team = new()
+            {
+                MakeOpponentPokemon("Gengar", "ghost", 94),
+                MakeOpponentPokemon("Haunter", "ghost", 93),
+                MakeOpponentPokemon("Arbok", "poison", 24)
+            }
+        },
+
+        new BattleOpponent
+        {
+            Name = "Lance",
+            SpriteUrl = "/images/trainers/lance.png",
+            IsBoss = true,
+            Team = new()
+            {
+                MakeOpponentPokemon("Gyarados", "water", 130),
+                MakeOpponentPokemon("Dragonair", "dragon", 148),
+                MakeOpponentPokemon("Dragonite", "dragon", 149)
+            }
+        },
+
+        // ------------------ CHAMPION ------------------
+
+        new BattleOpponent
+        {
+            Name = "Blue",
+            SpriteUrl = "/images/trainers/blue.png",
+            IsBoss = true,
+            Team = new()
+            {
+                MakeOpponentPokemon("Pidgeot", "flying", 18),
+                MakeOpponentPokemon("Alakazam", "psychic", 65),
+                MakeOpponentPokemon("Charizard", "fire", 6)
+            }
+        }
+    };
+    
+    
+}
+    
+    private async Task<BattleOpponent> GetRandomRouteTrainerAsync()
+    {
+        var ids = new HashSet<int>();
+        while (ids.Count < 3)
+            ids.Add(Random.Shared.Next(1, 152)); // Gen 1
+
+        var team = new List<OpponentPokemon>();
+
+        foreach (var id in ids)
+        {
+            var details = await _http.GetFromJsonAsync<ApiPokemonDetails>($"{_apiUrl}pokemon/{id}");
+            if (details == null) continue;
+
+            team.Add(new OpponentPokemon
+            {
+                Name = details.Name,
+                Type = details.Types.First().Type.Name,
+                SpriteUrl = details.Sprites.Front_Default
+            });
+        }
+
+        return new BattleOpponent
+        {
+            Name = "Random Trainer",
+            SpriteUrl = "/images/trainers/random.png",
+            IsBoss = false,
+            Team = team
+        };
+    }
+    
+    
+    public async Task<BattleOpponent> GetRandomOpponentAsync()
+    {
+        var roll = Random.Shared.Next(0, 100);
+
+        if (roll < 40)
+            return await GetRandomRouteTrainerAsync();
+
+        var bosses = GetAllBossOpponents();
+        return bosses[Random.Shared.Next(bosses.Count)];
+    }
+    
+    public async Task<BattleResult> BattleAsync(int userId, BattleOpponent opponent)
+    {
+        var userTeam = await GetUserTeamAsync(userId);
+
+        var result = new BattleResult();
+        var rounds = new List<PokemonRoundResult>();
+
+        if (userTeam.Count != 3 || opponent.Team.Count != 3)
+        {
+            result.OverallResult = "You must have exactly 3 Pokémon.";
+            return result;
+        }
+
+        var score = 0;
+
+        for (int i = 0; i < 3; i++)
+        {
+            var userMon = userTeam[i];
+            var oppMon = opponent.Team[i];
+
+            var userType = userMon.Type.ToLower();
+            var oppType = oppMon.Type.ToLower();
+
+            var userStrong = IsTypeStrongAgainst(userType, oppType);
+            var oppStrong = IsTypeStrongAgainst(oppType, userType);
+
+            string outcome;
+
+            if (userStrong && !oppStrong)
+            {
+                score++;
+                outcome = "Win";
+            }
+            else if (oppStrong && !userStrong)
+            {
+                score--;
+                outcome = "Lose";
+            }
+            else
+            {
+                outcome = "Tie";
+            }
+
+            rounds.Add(new PokemonRoundResult
+            {
+                UserPokemonName = userMon.Name,
+                UserPokemonType = userType,
+                OpponentPokemonName = oppMon.Name,
+                OpponentPokemonType = oppType,
+                Outcome = outcome
+            });
+        }
+
+        result.Rounds = rounds;
+        result.OverallResult =
+            score > 0 ? "You Win!" :
+            score < 0 ? "You Lose!" :
+            "It's a Tie!";
+
+        return result;
+    }
+    
+    
+
     
     // for the report, tis allows Admin/global report access later
     public async Task<List<Domain.Models.Pokemon>> GetAllPokemonAsync()
