@@ -1,11 +1,14 @@
 @page "/report"
 @rendermode InteractiveServer
-@inject PokemonService PokemonService
-@using Pokemon.Domain.Models
-@using System.Text.Json
-@using Pokemon.Application.Services
 
-<h1 class="text-center text-danger my-4"> Pokémon Report Dashboard</h1>
+@using Pokemon.Domain.Models
+@using Pokemon.Application.Services
+@using System.Text.Json
+
+@inject PokemonService PokemonService
+@inject IJSRuntime JS
+
+<h1 class="text-center text-danger my-4">Pokémon Report Dashboard</h1>
 
 @if (isLoading)
 {
@@ -18,7 +21,11 @@ else
 {
     <div class="container">
 
+<<<<<<< Updated upstream
         <!-- Summary Cards -->
+=======
+        <!-- Summary Card -->
+>>>>>>> Stashed changes
         <div class="row mb-4">
             <div class="col-md-4">
                 <div class="card text-center shadow-sm">
@@ -30,7 +37,11 @@ else
             </div>
         </div>
 
+<<<<<<< Updated upstream
         <!-- Chart -->
+=======
+        <!-- Chart Section -->
+>>>>>>> Stashed changes
         <div class="card shadow-sm mb-4">
             <div class="card-body">
                 <h5>Type Distribution</h5>
@@ -38,7 +49,11 @@ else
             </div>
         </div>
 
+<<<<<<< Updated upstream
         <!-- Table -->
+=======
+        <!-- Table Section -->
+>>>>>>> Stashed changes
         <div class="card shadow-sm">
             <div class="card-body">
                 <h5>Saved Pokémon</h5>
@@ -51,12 +66,12 @@ else
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach (var p in pokemonList)
+                        @foreach (var pokemon in pokemonList)
                         {
                             <tr>
-                                <td class="text-capitalize">@p.Name</td>
-                                <td class="text-capitalize">@p.Type</td>
-                                <td>@p.UserId</td>
+                                <td class="text-capitalize">@pokemon.Name</td>
+                                <td class="text-capitalize">@pokemon.Type</td>
+                                <td>@pokemon.UserId</td>
                             </tr>
                         }
                     </tbody>
@@ -67,11 +82,13 @@ else
     </div>
 }
 
-@code {
+@code
+{
     private List<Pokemon> pokemonList = new();
+    private Dictionary<string, int> typeCounts = new();
+
     private bool isLoading = true;
     private int totalCount;
-    private Dictionary<string, int> typeCounts = new();
 
     protected override async Task OnInitializedAsync()
     {
@@ -80,7 +97,7 @@ else
 
         typeCounts = pokemonList
             .GroupBy(p => p.Type)
-            .ToDictionary(g => g.Key, g => g.Count());
+            .ToDictionary(group => group.Key, group => group.Count());
 
         isLoading = false;
     }
@@ -92,6 +109,4 @@ else
             await JS.InvokeVoidAsync("renderChart", typeCounts);
         }
     }
-
-    [Inject] private IJSRuntime JS { get; set; }
 }
