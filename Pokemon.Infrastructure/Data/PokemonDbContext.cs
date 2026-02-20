@@ -1,8 +1,7 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
-using Pokemon.Domain.Models;
-using OpenIddict.EntityFrameworkCore.Models;
+
 
 namespace Pokemon.Infrastructure.Data;
 
